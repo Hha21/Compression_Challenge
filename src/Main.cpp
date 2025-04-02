@@ -1,5 +1,6 @@
 // Main.cpp
 
+#include <cassert>
 #include <iostream>
 #include <boost/program_options.hpp>
 
@@ -12,7 +13,7 @@ int main (int argc, char** argv) {
     po::options_description opts("Allowed Options");
     opts.add_options()
         ("help,h", "Print help message")
-        ("ngram,n", po::value<int>()->default_value(1), "Set n-gram size");
+        ("dictionary_size,N", po::value<int>()->default_value(1024), "Set dictionary size");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, opts), vm);
@@ -23,9 +24,11 @@ int main (int argc, char** argv) {
         return 0;
     }
 
-    int n = vm["ngram"].as<int>();
-    
-    wavReader dataReader = wavReader(n);
+    int N = vm["dictionary_size"].as<int>();
+
+    assert((N >= 1024) && "ERROR: DICTIONARY SIZE MUST BE >= NUMBER OF SINGLE SYMBOLS (1024)");
+
+    wavReader dataReader = wavReader(N);
 
     return 0;
 }   
