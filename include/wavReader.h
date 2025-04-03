@@ -16,13 +16,7 @@
 
 #include <omp.h>
 
-struct samples_t {
-            uint32_t sample_rate;
-            uint16_t bits_per_sample;
-            uint32_t num_samples;
-            uint16_t channels;
-        };
-
+// Sample .wav header format
 struct wav_header {
     uint32_t chunkID;
     uint32_t chunkSize;
@@ -39,11 +33,13 @@ struct wav_header {
     uint32_t subChunk2Size;
 };
 
+// For reading files
 struct FileStats {  
     std::map<std::vector<int16_t>, size_t> ngram_counts;
     size_t total_count = 0;
 };
 
+// TokenEntry in Dictionary
 struct TokenEntry {
     size_t ID;
     size_t count = 0;
@@ -52,38 +48,48 @@ struct TokenEntry {
 };
 
 // DICTIONARY TYPE
-typedef std::map<std::vector<int16_t>, TokenEntry> Dictionary;
-typedef std::map<std::pair<std::vector<int16_t>, std::vector<int16_t>>, size_t> PairCount;
+typedef std::vector<std::vector<int16_t>> Data;                                                 ///< QUANTISED RAW DATA
+typedef std::vector<std::vector<TokenEntry>> TokenData;                                         ///< TOKENISED STREAM
+typedef std::map<std::vector<int16_t>, TokenEntry> Dictionary;                                  ///< DICTIONARY OF TOKENS
+typedef std::map<std::pair<std::vector<int16_t>, std::vector<int16_t>>, size_t> PairCount;      ///< COUNNT OF PAIRS
 
 class wavReader {
 
     private:
 
+        const int N;        ///< DICTIONARY SIZE 
+
+        FileStats globalStats;
+
+        Data quantData;
+        TokenData tokenisedData;
+        PairCount pairCounts;
+        
         std::vector<std::pair<std::vector<int16_t>, double>> sortedProbs;
         
         Dictionary token_dict;
+
         size_t nextID = 0;
+        size_t max_token_len = 1;
 
-        FileStats globalStats;
-        FileStats globalStatsFinal;
-
-        PairCount global_pair_counts;
-
-        std::unordered_map<int, uint32_t> symbol_counts;
+        std::vector<size_t> tokenCount;
         uint32_t totalSamples = 0;
 
-        void getData(const std::string& path, wav_header* header);
+        void readData(const std::string& path, const int idx);
+
         void makeSortedProb();
-
-        void readSingle(const std::string& path, FileStats& stats);
-        void readMany(const std::string& path, FileStats& stats);
-
-        void processFile(const std::string& path, FileStats& stats);
-        PairCount countTokenPairs(const std::string& path);
-        void mergePair();
+        
         void statsToDict();
 
-        const int N;        ///< DICTIONARY SIZE                                                               
+        void initUnigrams(FileStats& stats, const int idx);
+
+        void createTokenStream(const int idx);
+
+        void countTokenPairs(PairCount& pair_counts, const int idx);
+
+        void mergePair();      
+
+        void countTokens();                                                        
 
     public:
     
@@ -93,10 +99,5 @@ class wavReader {
 
         ~wavReader();
 };
-
-
-
-// Function declarations
-short* file_read(const std::string& path, wav_header* header);
 
 #endif // WAVREADER_H
