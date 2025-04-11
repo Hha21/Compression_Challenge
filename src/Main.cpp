@@ -5,6 +5,7 @@
 #include <boost/program_options.hpp>
 
 #include "../include/wavReader.h"
+#include "../include/Predictor.h"
 
 namespace po = boost::program_options;
 
@@ -29,6 +30,7 @@ int main (int argc, char** argv) {
     assert((N >= 1023) && "ERROR: DICTIONARY SIZE MUST BE >= NUMBER OF SINGLE SYMBOLS (1023)");
 
     wavReader dataReader = wavReader(N);
+    Predictor predictor = Predictor(dataReader);
 
     return 0;
 }   

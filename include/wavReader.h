@@ -58,12 +58,15 @@ class wavReader {
     private:
 
         const int N;        ///< DICTIONARY SIZE 
+        int num_files;      ///< NUMBER OF DATA FILES (.wav)
 
         FileStats globalStats;
 
+        // QUANTISED DATA, TOKENISED DATA, PAIR COUNTS, STREAM OF TOKEN IDs
         Data quantData;
         TokenData tokenisedData;
         PairCount pairCounts;
+        std::vector<std::vector<size_t>> idStreams;
         
         std::vector<std::pair<std::vector<int16_t>, double>> sortedProbs;
         
@@ -89,7 +92,9 @@ class wavReader {
 
         void mergePair();      
 
-        void countTokens();                                                        
+        void countTokens();
+
+        void exportTokenStream();                                                        
 
     public:
     
@@ -98,6 +103,10 @@ class wavReader {
         wavReader(int DICTIONARY_SIZE);
 
         ~wavReader();
+
+        // GETTERS:
+        const int getNumFiles();
+        const std::vector<int>& getTokenStream(const int idx); 
 };
 
 #endif // WAVREADER_H

@@ -226,22 +226,25 @@ void wavReader::outputTxt() {
     }
     
     output_file << "Symbol Probabilities:\n";
-    //std::cout << "\nSymbol Probabilities:\n";
-    for (const auto& [first, second] : this->sortedProbs)
+    for (const auto& [symbol_vector, prob] : this->sortedProbs)
     {   
-        prob_sum += second;
+        prob_sum += prob;
         output_file << "Symbol: ["; 
-        //std::cout << "Symbol: [";
-        for (size_t i = 0; i < first.size(); ++i) {
-            output_file << first[i];
-            //std::cout << first[i];
-            if (i != first.size() - 1) {
+        for (size_t i = 0; i < symbol_vector.size(); ++i) {
+            output_file << symbol_vector[i];
+            if (i != symbol_vector.size() - 1) {
                 output_file << ", ";
-                //std::cout << ", ";
             }
         }
-        output_file << "] | Probability: " << std::fixed << std::setprecision(20) << second << "\n";
-        //std::cout << "] | Probability: " << std::fixed << std::setprecision(20) << second << "\n";
+        output_file << "]"; 
+        auto it = this->token_dict.find(symbol_vector);
+        if (it != this->token_dict.end()) {
+            output_file << " | ID: " << it->second.ID;
+        } else {
+            output_file << " | ID: <not found>";
+        }
+
+        output_file << " | Probability: " << std::fixed << std::setprecision(20) << prob << "\n";
     }
 
     std::cout << "\nSum of all probabilities: " << prob_sum <<  " , num symbols = " << this->sortedProbs.size() << std::endl;
@@ -268,6 +271,58 @@ void wavReader::statsToDict() {
     std::cout << "CURRENT DICTIONARY SIZE : " << token_dict.size() << std::endl;
 }
 
+void wavReader::exportTokenStream() {
+    std::string filename = "TokenStreamNTokens";
+    filename += std::to_string(this->N);
+    filename += ".txt";
+    
+    std::ofstream out(filename);
+
+    if (!out.is_open()) {
+        std::cerr << "Error: Couldn't open file \n";
+        return;
+    }
+
+    for (const std::vector<TokenEntry>& sequence : this->tokenisedData) {
+        for (const TokenEntry& token : sequence) {
+            out << token.ID << " ";
+        }
+    }
+
+    out.close();
+    std::cout << "Token stream successfully written to " << filename << std::endl;
+}
+
+const int wavReader::getNumFiles () {
+    return this->num_files;
+}
+
+const std::vector<int>& wavReader::getTokenStream(const int idx) {
+    if (idx >= this->tokenisedData.size()) {
+        throw std::out_of_range("INVALID IDX FOR TOKEN STREAM!");
+    }
+
+    if (this->idStreams.size() != this->tokenisedData.size()) {
+        this->idStreams.resize(this->tokenisedData.size());
+    }
+
+    // IF NOT EMPTY RETURN
+    if (!this->idStreams[idx].empty()) {
+        return this->idStreams[idx];
+    }
+
+    // ELSE CONVERT TOKEN DICT VECTOR TO ID VECTOR
+    const std::vector<TokenEntry>& tokenStream = this->tokenisedData[idx];
+    std::vector<int>& idStream = this->idStreams[idx];
+    idStream.reserve(tokenStream.size());
+
+    for (const TokenEntry& token : tokenStream) {
+        idStream.push_back(static_cast<int>token.ID);
+    }
+
+    return idStream;
+}
+
 wavReader::wavReader(int DICTIONARY_SIZE) : N(DICTIONARY_SIZE) {
 
     const std::string directory = "./data/";    
@@ -282,25 +337,25 @@ wavReader::wavReader(int DICTIONARY_SIZE) : N(DICTIONARY_SIZE) {
         }
     }
     
-    int num_files = file_paths.size();
-    this->quantData.resize(num_files);
-    this->tokenisedData.resize(num_files);
-    this->tokenCount.resize(num_files);
+    this->num_files = file_paths.size();
+    this->quantData.resize(this->num_files);
+    this->tokenisedData.resize(this->num_files);
+    this->tokenCount.resize(this->num_files);
 
-    std::cout << "READING " << num_files << " FILES ..." << std::endl;
+    std::cout << "READING " << this->num_files << " FILES ..." << std::endl;
 
     // READ IN QUANTISED DATA ONCE:
     #pragma omp parallel for 
-    for (int i = 0; i < num_files;  ++i) {
+    for (int i = 0; i < this->num_files;  ++i) {
         wavReader::readData(file_paths[i], i);
     }
 
     {
-    std::vector<FileStats> allStats(num_files);
+    std::vector<FileStats> allStats(this->num_files);
 
     // FIND UNIGRAMS
     #pragma omp parallel for 
-    for (int i = 0; i < num_files; ++i) {
+    for (int i = 0; i < this->num_files; ++i) {
         wavReader::initUnigrams(allStats[i], i);
     }
 
@@ -320,21 +375,21 @@ wavReader::wavReader(int DICTIONARY_SIZE) : N(DICTIONARY_SIZE) {
 
         // 1 - CREATE GREEDY TOKEN STREAM WITH CURRENT DICTIONARY
         #pragma omp parallel for 
-        for (int i = 0; i < num_files; ++i) {
+        for (int i = 0; i < this->num_files; ++i) {
             wavReader::createTokenStream(i);
         }
 
         size_t stream_size = 0;
-        for (int i = 0; i < num_files; ++i) {
+        for (int i = 0; i < this->num_files; ++i) {
             stream_size += this->tokenCount[i];
         }
         std::cout << "CURRENT NUMBER OF TOKENS IN STREAM: " << stream_size << std::endl;
 
         // COUNT PAIRS
-        std::vector<PairCount> allCounts(num_files);
+        std::vector<PairCount> allCounts(this->num_files);
 
         #pragma omp parallel for 
-        for (int i = 0; i < num_files; ++i) {
+        for (int i = 0; i < this->num_files; ++i) {
             wavReader::countTokenPairs(allCounts[i], i);
         }
 
@@ -351,7 +406,7 @@ wavReader::wavReader(int DICTIONARY_SIZE) : N(DICTIONARY_SIZE) {
 
     // CREATE ONE FINAL STREAM WITH FINAL DICTIONARY
     #pragma omp parallel for 
-    for (int i = 0; i < num_files; ++i) {
+    for (int i = 0; i < this->num_files; ++i) {
         wavReader::createTokenStream(i);
     }
 
@@ -361,6 +416,8 @@ wavReader::wavReader(int DICTIONARY_SIZE) : N(DICTIONARY_SIZE) {
     // MAKE PROB AND OUTPUT TO TXT
     wavReader::makeSortedProb();
     wavReader::outputTxt();
+
+    // wavReader::exportTokenStream();
 }
 
 wavReader::~wavReader() {
