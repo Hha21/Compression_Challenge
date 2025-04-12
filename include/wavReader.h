@@ -66,7 +66,7 @@ class wavReader {
         Data quantData;
         TokenData tokenisedData;
         PairCount pairCounts;
-        std::vector<std::vector<size_t>> idStreams;
+        std::vector<std::vector<int>> idStreams;
         
         std::vector<std::pair<std::vector<int16_t>, double>> sortedProbs;
         

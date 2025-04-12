@@ -317,7 +317,7 @@ const std::vector<int>& wavReader::getTokenStream(const int idx) {
     idStream.reserve(tokenStream.size());
 
     for (const TokenEntry& token : tokenStream) {
-        idStream.push_back(static_cast<int>token.ID);
+        idStream.push_back(static_cast<int>(token.ID));
     }
 
     return idStream;

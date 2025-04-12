@@ -1,4 +1,4 @@
-#include "arithmeticCode.h"
+#include "../include/arithmeticCode.h"
 #include <iostream>
 
 

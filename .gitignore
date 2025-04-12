@@ -401,3 +401,7 @@ FodyWeavers.xsd
 *.txt
 
 *.o
+
+build/
+
+test

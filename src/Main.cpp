@@ -1,31 +1,32 @@
 // Main.cpp
 
-#include <cassert>
 #include <iostream>
-#include <boost/program_options.hpp>
+#include <string>
+#include <cstdlib>
+#include <cassert>
 
 #include "../include/wavReader.h"
 #include "../include/Predictor.h"
 
-namespace po = boost::program_options;
-
 int main (int argc, char** argv) {
 
-    po::options_description opts("Allowed Options");
-    opts.add_options()
-        ("help,h", "Print help message")
-        ("dictionary_size,N", po::value<int>()->default_value(1023), "Set dictionary size");
+    int N = 1023;
 
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, opts), vm);
-    po::notify(vm);
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
 
-    if (vm.count("help")) {
-        std::cout << opts << std::endl;
-        return 0;
+        if (arg == "-h" || arg == "--help") {
+            std::cout << "Usage: ./bpe [-N <dictionary_size>]\n"
+                      << "Options:\n"
+                      << "  -N <int>        Set dictionary size (default: 1023)\n"
+                      << "  -h, --help      Print this message\n";
+            return 0;
+        }
+
+        if ((arg == "-N" || arg == "--dictionary_size") && i + 1 < argc) {
+            N = std::stoi(argv[++i]);
+        }
     }
-
-    int N = vm["dictionary_size"].as<int>();
 
     assert((N >= 1023) && "ERROR: DICTIONARY SIZE MUST BE >= NUMBER OF SINGLE SYMBOLS (1023)");
 
