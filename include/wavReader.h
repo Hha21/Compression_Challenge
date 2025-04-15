@@ -57,8 +57,9 @@ class wavReader {
 
     private:
 
-        const int N;        ///< DICTIONARY SIZE 
-        int num_files;      ///< NUMBER OF DATA FILES (.wav)
+        const int N;                ///< DICTIONARY SIZE 
+        int num_files;              ///< NUMBER OF DATA FILES (.wav)
+        size_t stream_size = 0;     ///< NUMBER OF DATAPOINTS IN DATASET
 
         FileStats globalStats;
 
@@ -108,6 +109,7 @@ class wavReader {
         const int getNumFiles();
         const int getNumTokens();
         const std::vector<int>& getTokenStream(const int idx); 
+        size_t getStreamSize();
 };
 
 #endif // WAVREADER_H

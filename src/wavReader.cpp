@@ -327,6 +327,10 @@ const std::vector<int>& wavReader::getTokenStream(const int idx) {
     return idStream;
 }
 
+size_t wavReader::getStreamSize() {
+    return this->stream_size;
+}
+
 wavReader::wavReader(int DICTIONARY_SIZE) : N(DICTIONARY_SIZE) {
 
     const std::string directory = "./data/";    
@@ -383,11 +387,11 @@ wavReader::wavReader(int DICTIONARY_SIZE) : N(DICTIONARY_SIZE) {
             wavReader::createTokenStream(i);
         }
 
-        size_t stream_size = 0;
+        this->stream_size = 0;
         for (int i = 0; i < this->num_files; ++i) {
-            stream_size += this->tokenCount[i];
+            this->stream_size += this->tokenCount[i];
         }
-        std::cout << "CURRENT NUMBER OF TOKENS IN STREAM: " << stream_size << std::endl;
+        std::cout << "CURRENT NUMBER OF TOKENS IN STREAM: " << this->stream_size << std::endl;
 
         // COUNT PAIRS
         std::vector<PairCount> allCounts(this->num_files);

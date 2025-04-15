@@ -32,7 +32,10 @@ int main (int argc, char** argv) {
 
     Predictor predictor = Predictor(N);
 
-    predictor.train();
-    
+    const int num_epochs = 5;
+    const float learning_rate = 0.001;
+
+    predictor.trainModel(num_epochs, learning_rate);
+
     return 0;
 }   

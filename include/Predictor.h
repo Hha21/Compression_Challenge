@@ -23,10 +23,11 @@ class Predictor {
 
         int num_files;                                  ///< Total Number of Files
         int64_t vocab_size;                             ///< Command-Line Argument, number of Tokens
+        size_t number_tokens_stream;
 
         // TRAINING PARAMETERS
         const int SEQUENCE_LENGTH = 10;                 ///< Prediction sequence length for LSTM
-        const int BATCH_SIZE = 8;                       ///< Num Batches to process in parallel
+        const int BATCH_SIZE = 16;                       ///< Num Batches to process in parallel
 
         // DATA
         std::vector<std::vector<int>> train_streams;
@@ -41,7 +42,7 @@ class Predictor {
 
         std::pair<torch::Tensor, torch::Tensor> generateBatch();
 
-        void train();
+        void trainModel(int num_epochs, float learning_rate);
 };
 
 #endif // PREDICTOR_H

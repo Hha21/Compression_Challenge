@@ -1,4 +1,5 @@
 #include "../include/Predictor.h"
+#include "../include/LSTMTorch.h"
 
 Predictor::Predictor(const int DICTIONARY_SIZE) {
 
@@ -6,6 +7,7 @@ Predictor::Predictor(const int DICTIONARY_SIZE) {
 
     this->num_files = dataReader.getNumFiles();
     this->vocab_size = dataReader.getNumTokens();
+    this->number_tokens_stream == dataReader.getStreamSize();
 
     const int64_t embed_size = 128;
     const int64_t hidden_size = 256;
@@ -57,14 +59,40 @@ std::pair<torch::Tensor, torch::Tensor> Predictor::generateBatch() {
     return {inputs, targets};
 }
 
-void Predictor::train() {
-    std::pair<torch::Tensor, torch::Tensor> batch = this->generateBatch();
+void Predictor::trainModel(int num_epochs, float learning_rate) {
 
-    torch::Tensor inputs = batch.first;
-    torch::Tensor targets = batch.second;
+    int batches_per_epoch = 3000; //(this->number_tokens_stream * this->train_split) / (this->BATCH_SIZE * this->SEQUENCE_LENGTH);
+    
 
-    for (int i = 0; i < this->BATCH_SIZE; ++i) {
-        std::cout << "INPUT: " << inputs[i] << std::endl;
-        std::cout << "TARGET: " << targets[i] << std::endl;
+    torch::Device device(torch::kCPU);
+
+    torch::optim::Adam optimiser(this->model->parameters(), torch::optim::AdamOptions(learning_rate));
+    torch::nn::CrossEntropyLoss criterion;
+
+    float loss_value, perplexity;
+    for (int epoch = 0; epoch < num_epochs; ++epoch) {
+        for (int batch_idx = 0; batch_idx < batches_per_epoch; ++batch_idx) {
+            std::pair<torch::Tensor, torch::Tensor> batch = this->generateBatch();
+            torch::Tensor inputs = std::get<0>(batch);
+            torch::Tensor targets = std::get<1>(batch);
+
+            LSTMStates states = this->model->initHidden(static_cast<int64_t>(this->BATCH_SIZE));
+            LSTMOutput output = this->model->forward(inputs, states);
+            torch::Tensor logits = std::get<0>(output);
+            logits = logits.view({-1, this->vocab_size});            // [BATCH_SIZE * SEQ_LEN, vocab_size]
+            torch::Tensor flat_targets = targets.view(-1);          // [BATCH_SIZE * SEQ_LEN]
+
+            torch::Tensor loss = criterion(logits, flat_targets);
+
+            optimiser.zero_grad();
+            loss.backward();
+            optimiser.step();
+
+            loss_value = loss.item<float>();
+            perplexity = std::exp(loss_value);
+        }
+        std::cout << "Epoch " << (epoch + 1) << "/" << num_epochs
+                  << " - Loss: " << loss_value
+                  << " - Perplexity: " << perplexity << std::endl;  
     }
 }
