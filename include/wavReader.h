@@ -106,6 +106,7 @@ class wavReader {
 
         // GETTERS:
         const int getNumFiles();
+        const int getNumTokens();
         const std::vector<int>& getTokenStream(const int idx); 
 };
 

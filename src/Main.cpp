@@ -30,8 +30,9 @@ int main (int argc, char** argv) {
 
     assert((N >= 1023) && "ERROR: DICTIONARY SIZE MUST BE >= NUMBER OF SINGLE SYMBOLS (1023)");
 
-    wavReader dataReader = wavReader(N);
-    Predictor predictor = Predictor(dataReader);
+    Predictor predictor = Predictor(N);
 
+    predictor.train();
+    
     return 0;
 }   

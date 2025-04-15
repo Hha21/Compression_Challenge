@@ -11,17 +11,37 @@
 #include <cmath>
 #include <iostream>
 
+#include <torch/torch.h>
+
 class Predictor {
 
     private:
 
-        wavReader& reader;                      ///< Reference to wavReader class.
-        //LSTM model;
-        Net model;
+        Net model;                                      ///< LSTM Model
+
+        const double train_split = 0.8;                 ///< % of files to treat as train vs test
+
+        int num_files;                                  ///< Total Number of Files
+        int64_t vocab_size;                             ///< Command-Line Argument, number of Tokens
+
+        // TRAINING PARAMETERS
+        const int SEQUENCE_LENGTH = 10;                 ///< Prediction sequence length for LSTM
+        const int BATCH_SIZE = 8;                       ///< Num Batches to process in parallel
+
+        // DATA
+        std::vector<std::vector<int>> train_streams;
+        std::vector<std::vector<int>> val_streams;
+
+        // RNG
+        std::mt19937 rng;
 
     public:
 
-        Predictor(wavReader& reader_ref);
+        Predictor(const int DICTIONARY_SIZE);
+
+        std::pair<torch::Tensor, torch::Tensor> generateBatch();
+
+        void train();
 };
 
 #endif // PREDICTOR_H

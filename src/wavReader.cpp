@@ -297,6 +297,10 @@ const int wavReader::getNumFiles () {
     return this->num_files;
 }
 
+const int wavReader::getNumTokens() {
+    return this->N;
+}
+
 const std::vector<int>& wavReader::getTokenStream(const int idx) {
     if (idx >= this->tokenisedData.size()) {
         throw std::out_of_range("INVALID IDX FOR TOKEN STREAM!");

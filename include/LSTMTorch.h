@@ -2,7 +2,12 @@
 #define LSTMTORCH_H
 
 #include <iostream>
+#include <tuple>
+
 #include <torch/torch.h>
+
+typedef std::tuple<torch::Tensor, torch::Tensor> LSTMStates;        ///< {h_t, c_t}
+typedef std::tuple<torch::Tensor, LSTMStates> LSTMOutput;           ///< {output logits, {h_t, c_t}}
 
 class NetImpl : public torch::nn::Module {
 
@@ -23,12 +28,14 @@ class NetImpl : public torch::nn::Module {
             std::cout << "INIT LSTM!" << std::endl;
         }
 
-        torch::Tensor forward(torch::Tensor x) {
-            x = embedding(x);
-            auto lstm_out = lstm->forward(x);
-            auto output = std::get<0>(lstm_out);
-            return fc(output);
-        }
+
+        // NON-HIDDEN STATE USAGE
+        torch::Tensor forward(torch::Tensor x);
+
+        LSTMOutput forward(torch::Tensor x, LSTMStates hidden);
+
+        LSTMStates initHidden(int64_t batch_size);
+
 };
 
 TORCH_MODULE(Net);
